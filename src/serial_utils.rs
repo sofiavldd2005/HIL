@@ -1,5 +1,4 @@
-use serialport::{SerialPort, SerialPortType};
-use std::time::Duration;
+use serialport::SerialPort;
 
 
 pub fn get_serial_port(baud: u32) -> Box<dyn serialport::SerialPort> {

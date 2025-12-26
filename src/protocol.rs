@@ -1,6 +1,6 @@
 use serde::Deserialize;
 #[derive(Debug, Deserialize)] // deserialize to directly map from csv to struct
-pub struct Vn_simul_data {
+pub struct VnSimulData {
     // to be sent via serial port
 
     // char array : [0] a [129]
@@ -37,7 +37,7 @@ pub struct Vn_simul_data {
     pub accel_d: f32,
 }
 
-impl Vn_simul_data {
+impl VnSimulData {
     pub fn packet_to_vn (&self)->  Vec<u8>{ // to initialize the binary array to be sent via the serial port
         
         let mut packet : Vec<u8> = vec![0; 130]; //initialize an array to zeros with the vec! macro

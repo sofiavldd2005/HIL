@@ -1,7 +1,7 @@
 mod protocol;
 mod serial_utils;
 
-use crate::protocol::Vn_simul_data;
+use crate::protocol::VnSimulData;
 use std::thread;
 use std::time::{Duration, Instant};
 use serialport::SerialPort;
@@ -27,15 +27,12 @@ fn main() {
     let mut reader =
         csv::Reader::from_path("simulation_data.csv").expect("Failed to open CSV file"); //open csv
 
-    let frequency: f32 = 114.0; //Hz
-    let interval = Duration::from_secs_f32(1.0 / frequency);
-
     println!("Starting HIL Simulation at {}Hz...", frequency);
 
     for result in reader.deserialize() {
         let start_time = Instant::now();
 
-        let row: Vn_simul_data= result.expect("CSV format error");
+        let row: VnSimulData= result.expect("CSV format error");
         let packet = row.packet_to_vn();
 
         port.write_all(&packet).expect("Serial write failed");

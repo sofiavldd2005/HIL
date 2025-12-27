@@ -19,7 +19,11 @@ jobs:
 
       - name: Generate Documentation
         run: cargo doc --no-deps --all-features
-
+        - name: Install System Dependencies
+        # libudev-dev is required for crates like serialport to compile/doc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev
       - name: Fix Path for GitHub Pages
         # This creates a redirect so the URL is cleaner
         run: echo '<meta http-equiv="refresh" content="0; url=protocol_module_name/index.html">' > target/doc/index.html

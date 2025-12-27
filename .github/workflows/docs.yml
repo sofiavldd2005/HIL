@@ -1,8 +1,7 @@
 name: Deploy Documentation
-
 on:
   push:
-    branches: [ "main" ] # or "master" depending on your default branch
+    branches: [ "main" ]
 
 permissions:
   contents: write
@@ -14,20 +13,21 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Install System Dependencies
+        # Fixes the 'libudev' not found error from your logs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libudev-dev
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
 
       - name: Generate Documentation
         run: cargo doc --no-deps --all-features
-        - name: Install System Dependencies
-        # libudev-dev is required for crates like serialport to compile/doc
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libudev-dev
-      - name: Fix Path for GitHub Pages
-        # This creates a redirect so the URL is cleaner
-        run: echo '<meta http-equiv="refresh" content="0; url=protocol_module_name/index.html">' > target/doc/index.html
-        # NOTE: Replace 'protocol_module_name' with your actual crate name from Cargo.toml
+
+      - name: Setup Redirect
+        # This points the root URL to your specific 'hil' crate documentation
+        run: echo '<meta http-equiv="refresh" content="0; url=hil/index.html">' > target/doc/index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

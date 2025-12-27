@@ -3,89 +3,77 @@
 //! and the VectorNav binary serial protocol.
 //! This module also handles the data output of the stm into the dedicated CSVs
 //! 
-//! ### VectorNav IMU Structure Definition
-//! 
-//! This C structure represents the binary data layout for the IMU messages.
-//!
-//! ```c
-//! typedef struct vn_output_msg_test {
-//!     // sd card stuff
-//!     uint8_t safe_bits[STRUCT_SAFE_BITS_LEN];
-//!
-//!     // char array : [0] a [129]
-//!     // first 8 bytes are headers corresponding to the groups
-//!     float yaw;                    // deg   [8]-[11]
-//!     float pitch;                  // deg   [12]-[15]
-//!     float roll;                   // deg   [16]-[19]
-//!
-//!     // m/s² (ou seja sem passar pelos filtros do vn)
-//!     float uncomp_accel_x;         // [20]-[23]
-//!     float uncomp_accel_y;         // [24]-[27]
-//!     float uncomp_accel_z;         // [28]-[31]
-//!
-//!     // rad/s (ou seja sem passar pelos filtros do vn)
-//!     float uncomp_angular_rate_x;  // [32]-[35]
-//!     float uncomp_angular_rate_y;  // [36]-[39]
-//!     float uncomp_angular_rate_z;  // [40]-[43]
-//!
-//!     float temp;                   // ºC    [44]-[47]
-//!     float press;                  // kPa   [48]-[51]
-//!
-//!     float mag_x;                  // gauss [52]-[55]
-//!     float mag_y;                  // gauss [56]-[59]
-//!     float mag_z;                  // gauss [60]-[63]
-//!
-//!     // m/s² (ou seja, ja passando pelos filtros)
-//!     float accel_x;                // [64]-[67]
-//!     float accel_y;                // [68]-[71]
-//!     float accel_z;                // [72]-[75]
-//!
-//!     // rad/s
-//!     float angular_rate_x;         // [76]-[79]
-//!     float angular_rate_y;         // [80]-[83]
-//!     float angular_rate_z;         // [84]-[87]
-//!
-//!     float quat_x;                 // [88]-[91]
-//!     float quat_y;                 // [92]-[95]
-//!     float quat_z;                 // [96]-[99]
-//!     float quat_w;                 // [100]-[103]
-//!
-//!     float lin_accel_x;            // [104]-[107]
-//!     float lin_accel_y;            // [108]-[111]
-//!     float lin_accel_z;            // [112]-[115]
-//!
-//!     float accel_N;                // [116]-[119]
-//!     float accel_E;                // [120]-[123]
-//!     float accel_D;                // [124]-[127]
-//!
-//!     // CRC [128]-[129]
-//!
-//!     // other stuff
-//!     float accel_according_to_gravity;
-//!     float altitude;
-//!     uint32_t time;
-//! } vectornav_imu_typedef;
-//! ```
-//! 
-//!### STM Output data struct
-//! ```c
-//! Define Packet IDs
-//! 
-//! #define ID_VERTICAL   0x01  // 100Hz 
-//! #define ID_HORIZONTAL 0x02  // 10Hz
-//! #define ID_CONTROLLER 0x03  // 10Hz (or combined with horizontal)
-//! typedef struct __attribute__((packed)) {
-//!     uint8_t sync_byte; // 0xAA
-//!    uint8_t packet_id; // ID
-//!     uint8_t payload[64]; // Size largest msg possible
-//!     uint16_t crc;
-//! } OutgoingPacket_t;
-//! ```
+
 use serde::{Deserialize, Serialize};
 /// deserialize to directly map from csv to struct : fields as written in the CSV
 ///strut read from the csv and to be sent via serial port (excluding the headers and CRCs)
 ///
 /// ```c char array : [8] to [127]```
+///### VectorNav IMU Structure Definition
+/// 
+/// This C structure represents the binary data layout for the IMU messages.
+///
+/// ```c
+/// typedef struct vn_output_msg_test {
+///     // sd card stuff
+///     uint8_t safe_bits[STRUCT_SAFE_BITS_LEN];
+///
+///     // char array : [0] a [129]
+///     // first 8 bytes are headers corresponding to the groups
+///     float yaw;                    // deg   [8]-[11]
+///     float pitch;                  // deg   [12]-[15]
+///     float roll;                   // deg   [16]-[19]
+///
+///     // m/s² (ou seja sem passar pelos filtros do vn)
+///     float uncomp_accel_x;         // [20]-[23]
+///     float uncomp_accel_y;         // [24]-[27]
+///     float uncomp_accel_z;         // [28]-[31]
+///
+///     // rad/s (ou seja sem passar pelos filtros do vn)
+///     float uncomp_angular_rate_x;  // [32]-[35]
+///     float uncomp_angular_rate_y;  // [36]-[39]
+///     float uncomp_angular_rate_z;  // [40]-[43]
+///
+///     float temp;                   // ºC    [44]-[47]
+///     float press;                  // kPa   [48]-[51]
+///
+///     float mag_x;                  // gauss [52]-[55]
+///     float mag_y;                  // gauss [56]-[59]
+///     float mag_z;                  // gauss [60]-[63]
+///
+///     // m/s² (ou seja, ja passando pelos filtros)
+///     float accel_x;                // [64]-[67]
+///     float accel_y;                // [68]-[71]
+///     float accel_z;                // [72]-[75]
+///
+///     // rad/s
+///     float angular_rate_x;         // [76]-[79]
+///     float angular_rate_y;         // [80]-[83]
+///     float angular_rate_z;         // [84]-[87]
+///
+///     float quat_x;                 // [88]-[91]
+///     float quat_y;                 // [92]-[95]
+///     float quat_z;                 // [96]-[99]
+///     float quat_w;                 // [100]-[103]
+///
+///     float lin_accel_x;            // [104]-[107]
+///     float lin_accel_y;            // [108]-[111]
+///     float lin_accel_z;            // [112]-[115]
+///
+///     float accel_N;                // [116]-[119]
+///     float accel_E;                // [120]-[123]
+///     float accel_D;                // [124]-[127]
+///
+///     // CRC [128]-[129]
+///
+///     // other stuff
+///     float accel_according_to_gravity;
+///     float altitude;
+///     uint32_t time;
+/// } vectornav_imu_typedef;
+/// ```
+/// 
+
 #[derive(Debug, Deserialize)]
 pub struct VnSimulData {
     pub Yaw: f32,
@@ -124,6 +112,23 @@ pub struct VnSimulData {
 ///This struct shall save the output of the vertical kalman filter that runs on the stm. 
 /// 
 /// The serialize trait is aplied because we want to save the data to a CSV later
+/// 
+///### STM Output data struct
+/// 
+/// This C structure represents the binary data layout for the IMU messages.
+/// ```c
+/// Define Packet IDs
+/// 
+/// #define ID_VERTICAL   0x01  // 100Hz 
+/// #define ID_HORIZONTAL 0x02  // 10Hz
+/// #define ID_CONTROLLER 0x03  // 10Hz (or combined with horizontal)
+/// typedef struct __attribute__((packed)) {
+///     uint8_t sync_byte; // 0xAA
+///    uint8_t packet_id; // ID
+///     uint8_t payload[64]; // Size largest msg possible
+///     uint16_t crc;
+/// } OutgoingPacket_t;
+/// ```
 #[derive(Debug, Serialize)]
 pub struct VerticalFilterOutput {
     pub altitude: f32,

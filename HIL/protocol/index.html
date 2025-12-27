@@ -1,0 +1,76 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Protocol Module"><title>HIL::protocol - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="HIL" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0 (ded5c06cf 2025-12-08)" data-channel="1.92.0" data-search-js="search-d69d8955.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module protocol</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../HIL/index.html">HIL</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module protocol</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#protocol-module" title="Protocol Module">Protocol Module</a><ul><li><a href="#vectornav-imu-structure-definition" title="VectorNav IMU Structure Definition">VectorNav IMU Structure Definition</a></li><li><a href="#stm-output-data-struct" title="STM Output data struct">STM Output data struct</a></li></ul></li></ul><h3><a href="#structs">Module Items</a></h3><ul class="block"><li><a href="#structs" title="Structs">Structs</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate HIL</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">HIL</a></div><h1>Module <span>protocol</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/HIL/protocol.rs.html#1-233">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="protocol-module"><a class="doc-anchor" href="#protocol-module">§</a>Protocol Module</h2>
+<p>This module handles the mapping between CSV simulation data
+and the VectorNav binary serial protocol.
+This module also handles the data output of the stm into the dedicated CSVs</p>
+<h4 id="vectornav-imu-structure-definition"><a class="doc-anchor" href="#vectornav-imu-structure-definition">§</a>VectorNav IMU Structure Definition</h4>
+<p>This C structure represents the binary data layout for the IMU messages.</p>
+<div class="example-wrap"><pre class="language-c"><code>typedef struct vn_output_msg_test {
+    // sd card stuff
+    uint8_t safe_bits[STRUCT_SAFE_BITS_LEN];
+
+    // char array : [0] a [129]
+    // first 8 bytes are headers corresponding to the groups
+    float yaw;                    // deg   [8]-[11]
+    float pitch;                  // deg   [12]-[15]
+    float roll;                   // deg   [16]-[19]
+
+    // m/s² (ou seja sem passar pelos filtros do vn)
+    float uncomp_accel_x;         // [20]-[23]
+    float uncomp_accel_y;         // [24]-[27]
+    float uncomp_accel_z;         // [28]-[31]
+
+    // rad/s (ou seja sem passar pelos filtros do vn)
+    float uncomp_angular_rate_x;  // [32]-[35]
+    float uncomp_angular_rate_y;  // [36]-[39]
+    float uncomp_angular_rate_z;  // [40]-[43]
+
+    float temp;                   // ºC    [44]-[47]
+    float press;                  // kPa   [48]-[51]
+
+    float mag_x;                  // gauss [52]-[55]
+    float mag_y;                  // gauss [56]-[59]
+    float mag_z;                  // gauss [60]-[63]
+
+    // m/s² (ou seja, ja passando pelos filtros)
+    float accel_x;                // [64]-[67]
+    float accel_y;                // [68]-[71]
+    float accel_z;                // [72]-[75]
+
+    // rad/s
+    float angular_rate_x;         // [76]-[79]
+    float angular_rate_y;         // [80]-[83]
+    float angular_rate_z;         // [84]-[87]
+
+    float quat_x;                 // [88]-[91]
+    float quat_y;                 // [92]-[95]
+    float quat_z;                 // [96]-[99]
+    float quat_w;                 // [100]-[103]
+
+    float lin_accel_x;            // [104]-[107]
+    float lin_accel_y;            // [108]-[111]
+    float lin_accel_z;            // [112]-[115]
+
+    float accel_N;                // [116]-[119]
+    float accel_E;                // [120]-[123]
+    float accel_D;                // [124]-[127]
+
+    // CRC [128]-[129]
+
+    // other stuff
+    float accel_according_to_gravity;
+    float altitude;
+    uint32_t time;
+} vectornav_imu_typedef;</code></pre></div><h4 id="stm-output-data-struct"><a class="doc-anchor" href="#stm-output-data-struct">§</a>STM Output data struct</h4><div class="example-wrap"><pre class="language-c"><code>Define Packet IDs
+
+#define ID_VERTICAL   0x01  // 100Hz 
+#define ID_HORIZONTAL 0x02  // 10Hz
+#define ID_CONTROLLER 0x03  // 10Hz (or combined with horizontal)
+typedef struct __attribute__((packed)) {
+    uint8_t sync_byte; // 0xAA
+   uint8_t packet_id; // ID
+    uint8_t payload[64]; // Size largest msg possible
+    uint16_t crc;
+} OutgoingPacket_t;</code></pre></div></div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.AirbakesControlerOutput.html" title="struct HIL::protocol::AirbakesControlerOutput">Airbakes<wbr>Controler<wbr>Output</a></dt><dd>This struct shall save the output of the  airbrakes controler that runs on the stm.
+The serialize trait is aplied because we want to save the data to a CSV later</dd><dt><a class="struct" href="struct.HorizontalFilterOutput.html" title="struct HIL::protocol::HorizontalFilterOutput">Horizontal<wbr>Filter<wbr>Output</a></dt><dd>This struct shall save the output of the horizontal kalman filter that runs on the stm.
+The serialize trait is aplied because we want to save the data to a CSV later</dd><dt><a class="struct" href="struct.VerticalFilterOutput.html" title="struct HIL::protocol::VerticalFilterOutput">Vertical<wbr>Filter<wbr>Output</a></dt><dd>This struct shall save the output of the vertical kalman filter that runs on the stm.</dd><dt><a class="struct" href="struct.VnSimulData.html" title="struct HIL::protocol::VnSimulData">VnSimul<wbr>Data</a></dt><dd>deserialize to directly map from csv to struct : fields as written in the CSV
+strut read from the csv and to be sent via serial port (excluding the headers and CRCs)</dd></dl></section></div></main></body></html>

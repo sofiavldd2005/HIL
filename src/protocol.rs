@@ -149,6 +149,7 @@ pub struct HorizontalFilterOutput {
 
 ///This struct shall save the output of the  airbrakes controler that runs on the stm. 
 /// The serialize trait is aplied because we want to save the data to a CSV later
+#[derive(Debug, Serialize)] 
 pub struct AirbakesControlerOutput{
     pub apogee_prediction : f32,
     pub airbrakes_opening : f32,
@@ -234,7 +235,7 @@ impl VnSimulData {
         // packet[128..130].copy_from_slice(&crc.to_le_bytes());
         //packet[128] = 0xCC; // Dummy CRC
         // packet[129] = 0xAA; 
-        
+
         // Calculate CRC using the VectorNav algorithm
         let checksum = calculate_vn_crc(&packet);
         let crc_bytes = checksum.to_le_bytes();
@@ -264,9 +265,19 @@ pub fn calculate_vn_crc(data: &[u8]) -> u16 {
 
 ///Checks if calculated CRC is equal to received CRC
 pub fn is_packet_valid(buffer: &[u8]) -> bool {
-    if buffer.len() < 130 { return false; }
-    let received_crc = u16::from_le_bytes([buffer[128], buffer[129]]);
-    calculate_vn_crc(buffer) == received_crc
+    
+    // Ensure the buffer is at least long enough to hold a CRC (2 bytes)
+    if buffer.len() < 2 { return false; }
+
+    // 1. Extract the received CRC from the last two bytes of the buffer
+    let (data_part, crc_part) = buffer.split_at(buffer.len() - 2);
+    let received_crc = u16::from_le_bytes([crc_part[0], crc_part[1]]);
+
+    // 2. Calculate the CRC for the data portion
+    // Note: calculate_vn_crc must skip the sync byte internally
+    let calculated_crc = calculate_vn_crc(data_part);
+
+    calculated_crc == received_crc
 }
 
 

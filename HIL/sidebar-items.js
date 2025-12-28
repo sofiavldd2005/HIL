@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["main"],"mod":["protocol","serial_utils"]};
+window.SIDEBAR_ITEMS = {"fn":["main","process_stack","run_receiver"],"mod":["protocol","serial_utils"]};

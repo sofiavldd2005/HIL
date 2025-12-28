@@ -4,6 +4,8 @@
 //! This module also handles the data output of the stm into the dedicated CSVs
 //! 
 
+/// Offset calculation: 1 (Sync) + 1 (ID) + SAFE_BITS_LEN
+const PAYLOAD_OFFSET: usize = 2; // Example: Sync(1) + ID(1) 
 use serde::{Deserialize, Serialize};
 /// deserialize to directly map from csv to struct : fields as written in the CSV
 ///strut read from the csv and to be sent via serial port (excluding the headers and CRCs)
@@ -148,7 +150,7 @@ pub struct HorizontalFilterOutput {
 ///This struct shall save the output of the  airbrakes controler that runs on the stm. 
 /// The serialize trait is aplied because we want to save the data to a CSV later
 pub struct AirbakesControlerOutput{
-    pub apogee_predicition : f32,
+    pub apogee_prediction : f32,
     pub airbrakes_opening : f32,
 }
 
@@ -230,9 +232,81 @@ impl VnSimulData {
         //crc [128-129];
         //let crc = calculate_crc(&p);
         // packet[128..130].copy_from_slice(&crc.to_le_bytes());
-
-        packet[128] = 0xCC; // Dummy CRC
-        packet[129] = 0xAA;
+        //packet[128] = 0xCC; // Dummy CRC
+        // packet[129] = 0xAA; 
+        
+        // Calculate CRC using the VectorNav algorithm
+        let checksum = calculate_vn_crc(&packet);
+        let crc_bytes = checksum.to_le_bytes();
+        packet[128] = crc_bytes[0];
+        packet[129] = crc_bytes[1];
         packet
+    }
+}
+
+
+/// Rust implementation of the VectorNav Datasheet CRC
+pub fn calculate_vn_crc(data: &[u8]) -> u16 {
+    let mut crc: u16 = 0;
+    // We start at index 1 to skip the sync byte '0xFA' as per your C code
+    for i in 1..128 {
+        let byte = data[i];
+        crc = ((crc >> 8) | (crc << 8)) & 0xFFFF;
+        crc ^= byte as u16;
+        crc ^= (crc & 0xFF) >> 4;
+        crc ^= crc << 12;
+        crc ^= (crc & 0xFF) << 5;
+    }
+    crc
+}
+
+// --- Helper Functions for Serial Parsing ---
+
+///Checks if calculated CRC is equal to received CRC
+pub fn is_packet_valid(buffer: &[u8]) -> bool {
+    if buffer.len() < 130 { return false; }
+    let received_crc = u16::from_le_bytes([buffer[128], buffer[129]]);
+    calculate_vn_crc(buffer) == received_crc
+}
+
+
+
+pub fn parse_vertical(bytes: &[u8]) -> VerticalFilterOutput {
+    // Matches: safe_bits, altitude, velocity, acceleration, time
+    VerticalFilterOutput {
+        altitude: f32::from_le_bytes(bytes[PAYLOAD_OFFSET..PAYLOAD_OFFSET+4].try_into().unwrap()),
+        velocity: f32::from_le_bytes(bytes[PAYLOAD_OFFSET+4..PAYLOAD_OFFSET+8].try_into().unwrap()),
+        acceleration: f32::from_le_bytes(bytes[PAYLOAD_OFFSET+8..PAYLOAD_OFFSET+12].try_into().unwrap()),
+    }
+}
+
+pub fn parse_horizontal(bytes: &[u8]) -> HorizontalFilterOutput {
+    // Matches arrays: mag[3], pos[3], vel[3], acc[3], time
+    let mut o = PAYLOAD_OFFSET;
+    
+    let mut read_3f32 = |offset: &mut usize| {
+        let arr = [
+            f32::from_le_bytes(bytes[*offset..*offset+4].try_into().unwrap()),
+            f32::from_le_bytes(bytes[*offset+4..*offset+8].try_into().unwrap()),
+            f32::from_le_bytes(bytes[*offset+8..*offset+12].try_into().unwrap()),
+        ];
+        *offset += 12;
+        arr
+    };
+
+    HorizontalFilterOutput {
+        mag: read_3f32(&mut o),
+        pos: read_3f32(&mut o),
+        vel: read_3f32(&mut o),
+        acc: read_3f32(&mut o),
+    }
+}
+
+pub fn parse_controller(bytes: &[u8]) -> AirbakesControlerOutput {
+    // Matches: safe_bits, apogee, airbrakes, time
+    AirbakesControlerOutput {
+        apogee_prediction: f32::from_le_bytes(bytes[PAYLOAD_OFFSET..PAYLOAD_OFFSET+4].try_into().unwrap()),
+        airbrakes_opening: f32::from_le_bytes(bytes[PAYLOAD_OFFSET+4..PAYLOAD_OFFSET+8].try_into().unwrap()),
+
     }
 }

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["AirbakesControlerOutput","HorizontalFilterOutput","VerticalFilterOutput","VnSimulData"]};
+window.SIDEBAR_ITEMS = {"constant":["PAYLOAD_OFFSET"],"fn":["calculate_vn_crc","is_packet_valid","parse_controller","parse_horizontal","parse_vertical"],"struct":["AirbakesControlerOutput","HorizontalFilterOutput","VerticalFilterOutput","VnSimulData"]};

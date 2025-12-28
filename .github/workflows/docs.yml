@@ -25,7 +25,7 @@ jobs:
 
       - name: Generate Documentation
         # --no-deps prevents documenting every library you use, keeping it clean
-        run: cargo doc --no-deps --all-features
+        run: cargo doc --no-deps --all-features --document-private-items
 
       - name: Setup Redirect
         # We use HIL (uppercase) because your Cargo.toml and branch show that name
